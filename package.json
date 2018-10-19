@@ -1,0 +1,33 @@
+{
+  "name": "js-bot",
+  "version": "1.0.0",
+  "description": "Discord bot made by iWeeti#8031",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iWeeti/js-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "javascipt",
+    "js"
+  ],
+  "author": "iWeeti#8031",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iWeeti/js-bot/issues"
+  },
+  "homepage": "https://github.com/iWeeti/js-bot#readme",
+  "dependencies": {
+    "discord.js": "^11.4.2",
+    "discord.js-lavalink": "^2.1.3",
+    "mongodb": "^3.1.8",
+    "mongoose": "^5.3.4",
+    "request": "^2.88.0"
+  },
+  "devDependencies": {}
+}
