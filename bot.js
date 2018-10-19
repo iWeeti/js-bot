@@ -4,6 +4,7 @@ const config = require("./config.json");
 const fs = require("fs");
 const MongoClient = require("mongodb");
 const db = require("./mongo.js");
+const ex = require("./example.js");
 
 bot.commands = new Discord.Collection();
 bot.cooldowns = new Discord.Collection();
@@ -12,7 +13,7 @@ bot.settings = new Map();
 bot.blacklist = new Map();
 
 class Context {
-    constructor (message) {
+    constructor(message) {
         this.message = message;
         this.invoke_content = this.message.content.toLowerCase();
         this.messageArray = this.message.content.split(/\s+/g);
@@ -33,7 +34,7 @@ class Context {
     }
 
     getMember(ctx, name) {
-        if(name){
+        if (name) {
             return ctx.message.mentions.members.first() ||
                 ctx.guild.members.get(name) ||
                 ctx.guild.members.find(member => member.displayName === name) ||
@@ -43,7 +44,7 @@ class Context {
         }
     }
     getMemberOrAuthor(ctx, name) {
-        if(name){
+        if (name) {
             return ctx.message.mentions.members.first() ||
                 ctx.guild.members.get(name) ||
                 ctx.guild.members.find(member => member.displayName === name) ||
@@ -51,16 +52,16 @@ class Context {
                 ctx.author;
         } else {
             return ctx.message.mentions.members.first() ||
-            ctx.author;
+                ctx.author;
         }
     }
 }
 
 fs.readdir("./commands/", (err, files) => {
-    if(err) console.error(err);
+    if (err) console.error(err);
 
     let jsfiles = files.filter(f => f.split(".").pop() == "js");
-    if(jsfiles.length <= 0) {
+    if (jsfiles.length <= 0) {
         console.log("No commands to load.");
         return;
     }
@@ -74,42 +75,42 @@ fs.readdir("./commands/", (err, files) => {
     });
 });
 
-bot.on('ready', async() => {
-    // try {
-    //     await db.start();
-    // } catch(e) {
-    //     console.error(e)
-    //     process.exit(1)
-    // }
-    // await db.blacklist.find({}).forEach(doc => {
-    //     obj = {
-    //         userID: doc._id,
-    //         reason: doc.reason
-    //     }
-    //     bot.blacklist.set(doc._id, obj);
-    // });
+bot.on('ready', async () => {
+    try {
+        await db.start();
+    } catch(e) {
+        console.error(e)
+        process.exit(1)
+    }
+    await db.blacklist.find({}).forEach(doc => {
+        obj = {
+            userID: doc._id,
+            reason: doc.reason
+        }
+        bot.blacklist.set(doc._id, obj);
+    });
     console.log(`Ready, logged in as ${bot.user.tag}`);
 });
 
-bot.on("message", async(message) => {
-    if(message.author.bot) return;
-    if(message.channel.type === "dm") return message.channel.send("You can not use this bot in dms.");
-    if(!message.member) return;
-    //let prefix = bot.prefixes.get(message.guild.id);
+bot.on("message", async (message) => {
+    if (message.author.bot) return;
+    if (message.channel.type === "dm") return message.channel.send("You can not use this bot in dms.");
+    if (!message.member) return;
     let prefix;
-    // if(!prefix) {
-    //     prefix = await db.prefixes.findOne({id:message.guild.id});
-    //     bot.prefixes.set(message.guild.id, prefix);
-    // }
+    prefix = bot.prefixes.get(message.guild.id);
     if(!prefix) {
+        prefix = await db.prefixes.findOne({id:message.guild.id});
+        bot.prefixes.set(message.guild.id, prefix);
+    }
+    if (!prefix) {
         prefix = "js.";
     }
     let ctx = new Context(message);
-    if(!ctx.invoke_content.startsWith(prefix)) {
+    if (!ctx.invoke_content.startsWith(prefix)) {
         let mention = "<@488929645186514954> ";
-        if(!ctx.invoke_content.startsWith(mention)){
+        if (!ctx.invoke_content.startsWith(mention)) {
             mention = "<@!488929645186514954> ";
-            if(!ctx.invoke_content.startsWith(mention)){
+            if (!ctx.invoke_content.startsWith(mention)) {
                 return;
             } else {
                 ctx.message.mentions.members.delete(ctx.message.mentions.members.first());
@@ -124,20 +125,20 @@ bot.on("message", async(message) => {
     // ctx.channel.send(ctx.message.mentions.members.forEach(mention => ctx.channel.send(mention)));
     let cmd = bot.commands.get(ctx.message.content.slice(prefix.length));
     ctx.cmd = cmd;
-    if(!cmd) return;
-    if(!ctx.author.id === config.ownerID) {
+    if (!cmd) return;
+    if (!ctx.author.id === config.ownerID) {
         const blacklisted = bot.blacklist.get(ctx.author.id);
-        if(blacklisted) {
+        if (blacklisted) {
             let embed = Discord.RichEmbed()
-            .setTitle("You have been blacklisted.")
-            .setDescrption(blacklisted.reason)
-            .setColor(0xf44242);
+                .setTitle("You have been blacklisted.")
+                .setDescrption(blacklisted.reason)
+                .setColor(0xf44242);
             return ctx.channel.send(embed);
         }
-        if(cmd.help.nsfw && !ctx.channel.nsfw) {
+        if (cmd.help.nsfw && !ctx.channel.nsfw) {
             let embed = new Discord.RichEmbed()
-            .setTitle("This command can only be use in nsfw channels.")
-            .setColor(0xf44242);
+                .setTitle("This command can only be use in nsfw channels.")
+                .setColor(0xf44242);
             return ctx.channel.send(embed);
         }
         try {
