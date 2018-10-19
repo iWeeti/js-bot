@@ -5,6 +5,25 @@ const fs = require("fs");
 const MongoClient = require("mongodb");
 const db = require("./mongo.js");
 const ex = require("./example.js");
+const snekfetch = require("snekfetch");
+const { PlayerManager } = require("discord.js-lavalink");
+
+const nodes = [
+    { host: config.lavahost, port: config.wsport, region: "eu", password: config.lavapass}
+];
+
+bot.getSongs = async (bot, string) => {
+    const res = await snekfetch.get(`http://${bot.config.lavahost}:${bot.config.restport}/loadtracks`)
+        .query({"identifier": string})
+        .set("Authorization", bot.config.lavapass)
+        .catch(err => {
+            console.error(err);
+            return null;
+        });
+    if (!res) throw "There was an error, try again.";
+    if (!res.body.length) throw "No tracks were found.";
+    return res.body;
+}
 
 bot.commands = new Discord.Collection();
 bot.cooldowns = new Discord.Collection();
@@ -89,6 +108,13 @@ bot.on('ready', async () => {
         }
         bot.blacklist.set(doc._id, obj);
     });
+    const manager = new PlayerManager(bot, nodes, {
+        user: bot.user.id,
+        shards: 1
+    });
+    bot.config = config;
+    console.log(`Connected to lavalink with host ${config.lavahost}, wsport ${config.wsport} and restport ${config.restport}.`);
+    bot.manager = manager;
     console.log(`Ready, logged in as ${bot.user.tag}`);
 });
 
@@ -153,6 +179,14 @@ bot.on("message", async (message) => {
             console.error(e);
         }
     }
+});
+
+bot.on("error", err => {
+    console.error(err);
+});
+
+bot.on("warn", warn => {
+    console.warn(warn);
 });
 
 bot.login(config.token);
