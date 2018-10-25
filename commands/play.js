@@ -1,13 +1,28 @@
 const discord = require("discord.js");
-const snekfetch = require("snekfetch");
+const fetch = require("node-fetch");
 
 module.exports.run = async (bot, ctx) => {
-    console.log(`http://${bot.config.lavahost}:${bot.config.restport}/loadtracks?identfier=${ctx.args.join("%20")}`);
-    bot.getSongs(bot, `ytsearch:${ctx.args.join("%20")}`).then(songs => {
-        console.log(songs);
-        ctx.channel.send(songs.toString());
+    ctx.channel.send("wait");
+    const string = ctx.args.join(" ");
+    let res = await fetch(`http://${bot.config.lavahost}:${bot.config.restport}/loadtracks?identifier=ytsearch:${string.replace(" ", "%20")}`,{
+    headers: {'Authorization': bot.config.restnode.password}
     });
-    console.log(`http://${bot.config.lavahost}:${bot.config.restport}/loadtracks?identfier=${ctx.args.join("%20")}`);
+    let song = await res.json();
+    if (!song) throw  "No tracks found";
+    console.log(song[0]);
+    bot.manager.join({
+        guild: ctx.guild.id, // Guild id
+        channel: ctx.author.voiceChannel.id, // Channel id
+        host: "eu"
+    }).then(player => {
+        player.play(song[0]); // Track is a base64 string we get from Lavalink REST API
+     
+        player.once("error", error => console.error(error));
+        player.once("end", data => {
+            if (data.reason === "REPLACED") return; // Ignore REPLACED reason to prevent skip loops
+            // Play next song
+        });
+    });
 }
 
 module.exports.help = {

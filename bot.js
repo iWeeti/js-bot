@@ -35,13 +35,10 @@ class Context {
     constructor(message) {
         this.message = message;
         this.invoke_content = this.message.content.toLowerCase();
-        this.messageArray = this.message.content.split(/\s+/g);
-        this.command = this.messageArray[0];
-        this.args = this.messageArray.slice(1);
         this.author = message.member;
         this.channel = this.message.channel;
         this.guild = this.message.guild;
-        this.db = db;
+        // this.db = db;
     }
 
     tick(boolean) {
@@ -95,19 +92,19 @@ fs.readdir("./commands/", (err, files) => {
 });
 
 bot.on('ready', async () => {
-    try {
-        await db.start();
-    } catch(e) {
-        console.error(e)
-        process.exit(1)
-    }
-    await db.blacklist.find({}).forEach(doc => {
-        obj = {
-            userID: doc._id,
-            reason: doc.reason
-        }
-        bot.blacklist.set(doc._id, obj);
-    });
+    // try {
+    //     await db.start();
+    // } catch(e) {
+    //     console.error(e)
+    //     process.exit(1)
+    // }
+    // await db.blacklist.find({}).forEach(doc => {
+    //     obj = {
+    //         userID: doc._id,
+    //         reason: doc.reason
+    //     }
+    //     bot.blacklist.set(doc._id, obj);
+    // });
     const manager = new PlayerManager(bot, nodes, {
         user: bot.user.id,
         shards: 1
@@ -123,15 +120,17 @@ bot.on("message", async (message) => {
     if (message.channel.type === "dm") return message.channel.send("You can not use this bot in dms.");
     if (!message.member) return;
     let prefix;
-    prefix = bot.prefixes.get(message.guild.id);
-    if(!prefix) {
-        prefix = await db.prefixes.findOne({id:message.guild.id});
-        bot.prefixes.set(message.guild.id, prefix);
-    }
+    // prefix = bot.prefixes.get(message.guild.id);
+    // if(!prefix) {
+    //     prefix = await db.prefixes.findOne({id:message.guild.id});
+    //     bot.prefixes.set(message.guild.id, prefix);
+    // }
     if (!prefix) {
         prefix = "js.";
     }
     let ctx = new Context(message);
+    ctx.args = ctx.message.content.slice(prefix.length).split(" ");
+    ctx.command = ctx.args.shift();
     if (!ctx.invoke_content.startsWith(prefix)) {
         let mention = "<@488929645186514954> ";
         if (!ctx.invoke_content.startsWith(mention)) {
@@ -149,7 +148,7 @@ bot.on("message", async (message) => {
     }
     ctx.prefix = prefix;
     // ctx.channel.send(ctx.message.mentions.members.forEach(mention => ctx.channel.send(mention)));
-    let cmd = bot.commands.get(ctx.message.content.slice(prefix.length));
+    let cmd = bot.commands.get(ctx.command);
     ctx.cmd = cmd;
     if (!cmd) return;
     if (!ctx.author.id === config.ownerID) {
@@ -163,7 +162,7 @@ bot.on("message", async (message) => {
         }
         if (cmd.help.nsfw && !ctx.channel.nsfw) {
             let embed = new Discord.RichEmbed()
-                .setTitle("This command can only be use in nsfw channels.")
+                .setTitle("This command can only be used in nsfw channels.")
                 .setColor(0xf44242);
             return ctx.channel.send(embed);
         }
@@ -176,7 +175,7 @@ bot.on("message", async (message) => {
         try {
             cmd.run(bot, ctx);
         } catch (e) {
-            console.error(e);
+            ctx.channel.send(e);
         }
     }
 });
